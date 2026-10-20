@@ -60,7 +60,7 @@
 +/* Keep all observed bits for diagnostics, even if a watermark was cleared. */
 +static uint32_t
 +touch_irq(void)
-+{
+{
 +	st.irq_last = touch_rd(st.se, SE_IRQ);
 +	st.irq_status |= st.irq_last;
 +	return st.irq_last;
