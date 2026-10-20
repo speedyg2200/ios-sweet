@@ -60,7 +60,7 @@
 +/* Keep all observed bits for diagnostics, even if a watermark was cleared. */
 +static uint32_t
 +touch_irq(void)
-{
++{
 +	st.irq_last = touch_rd(st.se, SE_IRQ);
 +	st.irq_status |= st.irq_last;
 +	return st.irq_last;
@@ -280,31 +280,4 @@
 +	    touch_rd(st.se, 0x260), touch_rd(st.se, 0x264),
 +	    touch_rd(st.se, 0x284), touch_rd(st.se, 0x288), touch_rd(st.se, 0x254));
 +	if (touch_rd(st.se, 0x260) != SE_PACK0 || touch_rd(st.se, 0x264) != SE_PACK1 ||
-+	    touch_rd(st.se, 0x284) != SE_PACK0 || touch_rd(st.se, 0x288) != SE_PACK1 ||
-+	    touch_rd(st.se, 0x254) != 0) {
-+		printf("SWEET TOUCH: packing readback mismatch; probes skipped\n");
-+		return false;
-+	}
- 	if ((touch_rd(st.se, SE_TX_COUNT) & 0xfffffffu) ||
- 	    (touch_rd(st.se, SE_RX_COUNT) & 0x1ffffffu)) {
- 		printf("SWEET TOUCH: inherited FIFO data; probes skipped\n");
-@@ -511,14 +589,17 @@
- 	touch_wait(2);
- 	touch_gpio(8, 0, 3, 3, true, true);
- 	touch_wait(300); /* exceeds vendor 5 ms test + 95 ms post-test wait */
--	uint8_t gid[12] = {0}, fid1 = 0, fid2 = 0;
--	int ge = touch_read(0x5d, 0x4022, true, gid, sizeof(gid));
-+	uint8_t gid[32], legacy[32], fid1 = 0, fid2 = 0;
-+	st.probing = true;
-+	int ge = touch_probe_info(GOODIX_PID_REG, gid);
- 	printf("SWEET TOUCH: probe 0x5d err=%d pid=%02x%02x%02x%02x fw=%02x.%02x.%02x.%02x irq=%#x\n",
- 	    ge, gid[0], gid[1], gid[2], gid[3], gid[8], gid[9], gid[10], gid[11], st.irq_status);
-+	(void)touch_probe_info(0x8240, legacy);
- 	int fe1 = touch_read(0x38, 0xa3, false, &fid1, 1);
- 	int fe2 = touch_read(0x38, 0x9f, false, &fid2, 1);
- 	printf("SWEET TOUCH: probe 0x38 err=%d/%d chip-id=%02x:%02x irq=%#x\n",
- 	    fe1, fe2, fid1, fid2, st.irq_status);
-+	st.probing = false;
- 	bool goodix = !ge && gid[0] == '9' && gid[1] == '8' && gid[2] == '9' && gid[3] == '6';
- 	bool fts = !fe1 && !fe2 && fid1 == 0x54 && fid2 == 0x52;
- 	if (st.dead || goodix == fts) {
++	    touch_rd(st.se, 0x28
